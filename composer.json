@@ -1,0 +1,26 @@
+{
+    "name": "bogue89/mediaupload",
+    "description": "Media upload manager for compatibility PHP.",
+    "type": "library",
+    "keywords": ["media", "image", "video", "files", "resizes"],
+    "homepage": "http://jorgebenavides.com/mediaupload",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jorge Benavides",
+            "email": "bogue89@gmail.com",
+            "homepage": "http://jorgebenavides.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.9",
+    },
+    "require-dev": {
+    },
+    "autoload": {
+        "files": ["src/Psy/MediaUploader.php"],
+        "psr-4": {
+            "Mediaupload\\": "src"
+        }
+    }
+}
