@@ -130,6 +130,7 @@ class MediaUploader
 			if($this->options['optimize_original']) {
 				$image = new ImageMediaFile($file_info['dir'].$file_info['filename']);
 				if($image) {
+					$delete_old = null;
 					$r_width = 0;
 					$r_height = 0;
 					$width = $image->getWidth();
@@ -154,15 +155,18 @@ class MediaUploader
 					$image->setProgresive();
 					if(isset($this->options['optimize_original']['jpg_if_posible']) && $this->options['optimize_original']['jpg_if_posible']) {
 						if($image->getImageType() == IMAGETYPE_PNG AND !$image->hasAlpha()) {
+							$delete_old = $file_info['dir'].$file_info['filename'];
 							$ext = $image->convert(IMAGETYPE_JPEG);
 							$this->changeExtension($image->filename, $ext);
 							$this->changeExtension($file_info['filename'], $ext);
 							$file_info['type'] = "image/$ext";
-							$this->delete($file_info['dir'].$file_info['filename']);
 						}
 					}
 					$image->save($file_info['dir'].$file_info['filename']);
 					unset($image);
+					if($delete_old) {
+						$this->delete($delete_old);
+					}
 				}
 			}
 			// BlendImage
