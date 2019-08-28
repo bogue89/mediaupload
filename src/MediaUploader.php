@@ -158,6 +158,7 @@ class MediaUploader
 							$this->changeExtension($image->filename, $ext);
 							$this->changeExtension($file_info['filename'], $ext);
 							$file_info['type'] = "image/$ext";
+							$this->delete($file_info['dir'].$file_info['filename']);
 						}
 					}
 					$image->save($file_info['dir'].$file_info['filename']);
@@ -239,7 +240,7 @@ class MediaUploader
 		$resizes = $this->options['resizes'];
 		$this->delete($dir.$filename);
 		foreach($resizes as $resize => $size) {
-			$this->delete($dir.$resize.$filename);	
+			$this->delete($dir.$resize.$filename);
 		}
 	}
 	public function delete($filename) {
