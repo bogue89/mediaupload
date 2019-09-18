@@ -205,4 +205,32 @@ class ImageMediaFile
 	    }
 	    return false;
 	}
+	public function autorotate() {
+		if(!function_exists('exif_read_data')) {
+			return;
+		}
+		$exif = $this->getExif();
+		if(isset($exif['Orientation'])) {
+			switch($exif['Orientation']) {
+	            case 3:
+	                $this->image = imagerotate($this->image, 180, 0);
+	                break;
+	
+	            case 6:
+	                $this->image = imagerotate($this->image, -90, 0);
+	                break;
+	
+	            case 8:
+	                $this->image = imagerotate($this->image, 90, 0);
+	                break;
+	        }
+		}
+		$this->save();
+	}
+	public function getExif() {
+		if(!function_exists('exif_read_data')) {
+			return array();
+		}
+		return exif_read_data($this->filename);
+	}
 }

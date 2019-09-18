@@ -8,6 +8,7 @@ class MediaUploader
 		'slug_url' => true,
 		'slug_replace' => '-',
 		'resizes' => array(),
+		'autorotate' => true,
 		'blendWith' => false,
 		'optimize_original' => array(
 			'max_width' => 2400,
@@ -126,6 +127,14 @@ class MediaUploader
 	}
 	public function afterMediaSave(&$file_info) {
 		if(preg_match('/image\/(png|jpg|jpeg)/i', $file_info['type'])) {
+			if($image = new ImageMediaFile($file_info['dir'].$file_info['filename'])) {
+				$file_info['exif'] = $image->getExif();
+			}
+			if($this->options['autorotate'] && function_exists('exif_read_data')) {
+				if($image = new ImageMediaFile($file_info['dir'].$file_info['filename'])) {
+					$image->autorotate();
+				}
+			}
 			// Optimize original
 			if($this->options['optimize_original']) {
 				$image = new ImageMediaFile($file_info['dir'].$file_info['filename']);
