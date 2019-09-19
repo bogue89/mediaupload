@@ -133,6 +133,7 @@ class MediaUploader
 			if($this->options['autorotate'] && function_exists('exif_read_data')) {
 				if($image = new ImageMediaFile($file_info['dir'].$file_info['filename'])) {
 					$image->autorotate();
+					unset($image);
 				}
 			}
 			// Optimize original
