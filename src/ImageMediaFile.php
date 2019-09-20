@@ -17,9 +17,10 @@ class ImageMediaFile
 		}
 	}
 
-	public function __construct($filename)
+	public function __construct($filename, $memory_limit = '256M', $execution_time = 60)
 	{
-		ini_set('max_execution_time', 120);
+		ini_set('memory_limit', $memory_limit);
+		ini_set('max_execution_time', $execution_time);
 		
 		if(!file_exists($filename))
 			throw new Exception();
@@ -168,10 +169,9 @@ class ImageMediaFile
 		imagesavealpha($new_image, true);
 		imagefill($new_image, 0, 0, imagecolorallocatealpha($new_image, 244, 244, 244, 127));
 		imagecopyresampled($new_image, $this->image, 0, 0, 0, 0, $width, $height, $this->getWidth(), $this->getHeight());
-
+		unset($this->image);
 		$this->image = $new_image;
 	}
-	
 	public function blendWith($image, $posx, $posy, $x, $y, $w, $h) {
 		if($image->image) {
 			imagealphablending($this->image, true);
@@ -231,6 +231,9 @@ class ImageMediaFile
 		if(!function_exists('exif_read_data')) {
 			return array();
 		}
-		return exif_read_data($this->filename);
+		if($data = @exif_read_data($this->filename)) {
+			return $data;
+		}
+		return array();
 	}
 }

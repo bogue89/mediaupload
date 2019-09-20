@@ -127,63 +127,15 @@ class MediaUploader
 	}
 	public function afterMediaSave(&$file_info) {
 		if(preg_match('/image\/(png|jpg|jpeg)/i', $file_info['type'])) {
+			
 			if($image = new ImageMediaFile($file_info['dir'].$file_info['filename'])) {
+				// Get exif meta data
 				$file_info['exif'] = $image->getExif();
-			}
-			if($this->options['autorotate'] && function_exists('exif_read_data')) {
-				if($image = new ImageMediaFile($file_info['dir'].$file_info['filename'])) {
+				if($this->options['autorotate']) {
 					$image->autorotate();
-					unset($image);
 				}
-			}
-			// Optimize original
-			if($this->options['optimize_original']) {
-				$image = new ImageMediaFile($file_info['dir'].$file_info['filename']);
-				if($image) {
-					$delete_old = null;
-					$r_width = 0;
-					$r_height = 0;
-					$width = $image->getWidth();
-					$height = $image->getHeight();
-					if(isset($this->options['optimize_original']['max_width'])) {
-						$r_width = $width > $this->options['optimize_original']['max_width'] ? $this->options['optimize_original']['max_width']:$width;
-					}
-					if(isset($this->options['optimize_original']['max_height'])) {
-						$r_height = $height > $this->options['optimize_original']['max_height'] ? $this->options['optimize_original']['max_height']:$height;
-					}
-					if($r_width > 0 && $r_height > 0) {
-						$width = $r_width;
-						$height = $r_height;
-					} else if($r_width > 0) {
-						$height = $height * $r_width/$width;
-						$width = $r_width;
-					} else if($r_height > 0) {
-						$width = $width * $r_height/$height;
-						$height = $r_height;
-					}
-					$image->resize($width, $height);
-					$image->setProgresive();
-					if(isset($this->options['optimize_original']['jpg_if_posible']) && $this->options['optimize_original']['jpg_if_posible']) {
-						if($image->getImageType() == IMAGETYPE_PNG AND !$image->hasAlpha()) {
-							$delete_old = $file_info['dir'].$file_info['filename'];
-							$ext = $image->convert(IMAGETYPE_JPEG);
-							$this->changeExtension($image->filename, $ext);
-							$this->changeExtension($file_info['filename'], $ext);
-							$file_info['type'] = "image/$ext";
-						}
-					}
-					$image->save($file_info['dir'].$file_info['filename']);
-					unset($image);
-					if($delete_old) {
-						$this->delete($delete_old);
-					}
-				}
-			}
-			// BlendImage
-			if($image = new ImageMediaFile($file_info['dir'].$file_info['filename'])) {
-				$file_info['width'] = $image->getWidth();
-				$file_info['height'] = $image->getHeight();
-				if($this->options['blendWith']) {
+				// BlendImage
+				if($this->options['blendWith'] && is_array($this->options['blendWith'])) {
 					$blendOptions = array_merge(
 						array(
 							'filename' => '',
@@ -214,37 +166,46 @@ class MediaUploader
 						}
 						$watermark->resize($w, $h);
 						$image->blendWith($watermark, $x, $y, 0, 0, $w, $h);
-						$image->save();
+						unset($watermark);
 					}
 				}
-			}
-			// Resize image
-			foreach($this->options['resizes'] as $prefix => $resize) {
-				$image = new ImageMediaFile($file_info['dir'].$file_info['filename']);
-				if($image) {
-					$r_width = 0;
-					$r_height = 0;
-					$width = $image->getWidth();
-					$height = $image->getHeight();
-					if(isset($resize['width'])) {
-						$r_width = $resize['width'];
+				// Optimize original
+				if($this->options['optimize_original']) {
+					$image->setProgresive();
+					if(isset($this->options['optimize_original']['jpg_if_posible']) && $this->options['optimize_original']['jpg_if_posible']) {
+						if($image->getImageType() == IMAGETYPE_PNG AND !$image->hasAlpha()) {
+							$ext = $image->convert(IMAGETYPE_JPEG);
+							$this->delete($file_info['dir'].$file_info['filename']);
+							$file_info['type'] = "image/$ext";
+							$image->filename = preg_replace("/\.\w+$/", ".{$ext}", $image->filename);
+							$file_info['filename'] = basename($image->filename);
+						}
 					}
-					if(isset($resize['height'])) {
-						$r_height = $resize['height'];
+					if(isset($this->options['optimize_original']['max_width']) && $image->getWidth() > $this->options['optimize_original']['max_width']) {
+						$image->resizeToWidth($this->options['optimize_original']['max_width']);
 					}
-					if($r_width > 0 && $r_height > 0) {
-						$width = $r_width;
-						$height = $r_height;
-					} else if($r_width > 0) {
-						$height = $height * $r_width/$width;
-						$width = $r_width;
-					} else if($r_height > 0) {
-						$width = $width * $r_height/$height;
-						$height = $r_height;
+					if(isset($this->options['optimize_original']['max_height']) && $image->getHeight() > $this->options['optimize_original']['max_height']) {
+						$image->resizeToHeight($this->options['optimize_original']['max_height']);
 					}
-					$image->resize($width, $height);
-					$image->save($file_info['dir'].$prefix.$file_info['filename']);
-					unset($image);
+				}
+				$file_info['width'] = $image->getWidth();
+				$file_info['height'] = $image->getHeight();
+				$image->save();
+				unset($image);
+				// Resize image
+				if(isset($this->options['resizes']) && is_array($this->options['resizes'])) {
+					foreach($this->options['resizes'] as $prefix => $resize) {
+						$image = new ImageMediaFile($file_info['dir'].$file_info['filename']);
+						if(isset($resize['width']) && isset($resize['height'])) {
+							$image->resize($resize['width'], $resize['height']);
+						} else if(isset($resize['width'])) {
+							$image->resizeToWidth($resize['width']);
+						} else if(isset($resize['height'])) {
+							$image->resizeToHeight($resize['height']);
+						}
+						$image->save($file_info['dir'].$prefix.$file_info['filename']);
+						unset($image);
+					}	
 				}
 			}
 		}
@@ -259,7 +220,7 @@ class MediaUploader
 	}
 	public function delete($filename) {
 		if(file_exists($filename) && !is_dir($filename)) {
-			return unlink($filename);	
+			return unlink($filename);
 		}
 		return null;
 	}
