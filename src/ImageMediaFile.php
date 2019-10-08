@@ -22,27 +22,23 @@ class ImageMediaFile
 		ini_set('memory_limit', $memory_limit);
 		ini_set('max_execution_time', $execution_time);
 		
-		if(!file_exists($filename))
+		if(!file_exists($filename)) {
 			throw new Exception();
+		}
 		
 		$this->filename = $filename;
 		
 		$image_info = getimagesize($filename);
 		$this->image_type = $image_info[2];
 
-		if($this->image_type == IMAGETYPE_JPEG)
-		{
+		if($this->image_type == IMAGETYPE_JPEG) {
 			$this->image = imagecreatefromjpeg($filename);
-		}
-		elseif($this->image_type == IMAGETYPE_GIF)
-		{
+		} elseif($this->image_type == IMAGETYPE_GIF) {
 			$this->image = imagecreatefromgif($filename);
-		}
-		elseif($this->image_type == IMAGETYPE_PNG)
-		{
+		} elseif($this->image_type == IMAGETYPE_PNG) {
 			$this->image = imagecreatefrompng($filename);
-		}
-		else {
+			imagesavealpha($this->image, true);
+		} else {
 			throw new Exception();
 		}
 	}
@@ -57,58 +53,46 @@ class ImageMediaFile
 		if($filename == null) {
 			$filename = $this->filename;
 		}
-		if(is_null($image_type))
+		if(is_null($image_type)) {
 			$image_type = $this->image_type;
+		}
 
-		if($image_type == IMAGETYPE_JPEG)
-		{
+		if($image_type == IMAGETYPE_JPEG) {
 			imagejpeg($this->image, $filename, $compression);
-		}
-		elseif($image_type == IMAGETYPE_GIF)
-		{
+		} elseif($image_type == IMAGETYPE_GIF) {
 			imagegif($this->image, $filename);         
-		}
-		elseif($image_type == IMAGETYPE_PNG)
-		{
+		} elseif($image_type == IMAGETYPE_PNG) {
 			imagepng($this->image, $filename);
 		}
 
-		if($permissions != null)
+		if($permissions != null) {
 			chmod($filename, $permissions);
+		}
 	}
 
 	public function output($image_type = IMAGETYPE_JPEG)
 	{
-		if($image_type == IMAGETYPE_JPEG)
-		{
+		if($image_type == IMAGETYPE_JPEG) {
 			imagejpeg($this->image);
-		}
-		elseif($image_type == IMAGETYPE_GIF)
-		{
+		} elseif($image_type == IMAGETYPE_GIF) {
 			imagegif($this->image);         
-		}
-		elseif($image_type == IMAGETYPE_PNG)
-		{
+		} elseif($image_type == IMAGETYPE_PNG) {
 			imagepng($this->image);
 		}
 	}
-	public function convert($image_type = IMAGETYPE_JPEG) {
+	public function convert($image_type = IMAGETYPE_JPEG)
+	{
 		
 		$filename = $this->filename;
 		$recomended_extension = null;
 		
-		if($image_type == IMAGETYPE_JPEG)
-		{
+		if($image_type == IMAGETYPE_JPEG) {
 			imagejpeg($this->image, $filename);
 			$recomended_extension = "jpg";
-		}
-		elseif($image_type == IMAGETYPE_GIF)
-		{
+		} elseif($image_type == IMAGETYPE_GIF) {
 			imagegif($this->image, $filename);
 			$recomended_extension = "gif";
-		}
-		elseif($image_type == IMAGETYPE_PNG)
-		{
+		} elseif($image_type == IMAGETYPE_PNG) {
 			imagepng($this->image, $filename);
 			$recomended_extension = "png";
 		}
