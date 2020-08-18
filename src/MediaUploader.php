@@ -13,8 +13,9 @@ class MediaUploader
 		'optimize_original' => array(
 			'max_width' => 2400,
 			'compression' => 70,
-			'jpg_if_posible' => 0
-		)
+			'jpg_if_posible' => 0,
+		),		
+		'webp_duplicate' => 0,
 	);
 	
 	private $file_keys = array('name','type','tmp_name', 'error', 'size', 'dir');
@@ -191,6 +192,13 @@ class MediaUploader
 				$file_info['width'] = $image->getWidth();
 				$file_info['height'] = $image->getHeight();
 				$image->save();
+				if($this->options['webp_duplicate']) {
+					if($ext = $image->convert(IMAGETYPE_WEBP)) {
+						$image->filename = preg_replace("/\.\w+$/", ".{$ext}", $image->filename);
+						$image->save();
+						unset($image);
+					}					
+				}
 				unset($image);
 				// Resize image
 				if(isset($this->options['resizes']) && is_array($this->options['resizes'])) {
@@ -204,8 +212,14 @@ class MediaUploader
 							$image->resizeToHeight($resize['height']);
 						}
 						$image->save($file_info['dir'].$prefix.$file_info['filename']);
+						if($this->options['webp_duplicate']) {
+							if($ext = $image->convert(IMAGETYPE_WEBP)) {
+								$image->save(preg_replace("/\.\w+$/", ".{$ext}", $file_info['dir'].$prefix.$file_info['filename']));
+								unset($image);
+							}
+						}
 						unset($image);
-					}	
+					}
 				}
 			}
 		}

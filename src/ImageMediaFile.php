@@ -38,6 +38,8 @@ class ImageMediaFile
 		} elseif($this->image_type == IMAGETYPE_PNG) {
 			$this->image = imagecreatefrompng($filename);
 			imagesavealpha($this->image, true);
+		} elseif($this->image_type == IMAGETYPE_WEBP) {
+			$this->image = imagecreatefromwebp($filename);
 		} else {
 			throw new Exception();
 		}
@@ -63,6 +65,8 @@ class ImageMediaFile
 			imagegif($this->image, $filename);         
 		} elseif($image_type == IMAGETYPE_PNG) {
 			imagepng($this->image, $filename);
+		} elseif($image_type == IMAGETYPE_WEBP) {
+			imagewebp($this->image, $filename, $compression);
 		}
 
 		if($permissions != null) {
@@ -78,16 +82,17 @@ class ImageMediaFile
 			imagegif($this->image);         
 		} elseif($image_type == IMAGETYPE_PNG) {
 			imagepng($this->image);
+		} elseif($image_type == IMAGETYPE_WEBP) {
+			imagewebp($this->image);
 		}
 	}
-	public function convert($image_type = IMAGETYPE_JPEG)
+	public function convert($image_type = IMAGETYPE_JPEG, $compression = 80)
 	{
-		
 		$filename = $this->filename;
 		$recomended_extension = null;
 		
 		if($image_type == IMAGETYPE_JPEG) {
-			imagejpeg($this->image, $filename);
+			imagejpeg($this->image, $filename, $compression);
 			$recomended_extension = "jpg";
 		} elseif($image_type == IMAGETYPE_GIF) {
 			imagegif($this->image, $filename);
@@ -95,6 +100,9 @@ class ImageMediaFile
 		} elseif($image_type == IMAGETYPE_PNG) {
 			imagepng($this->image, $filename);
 			$recomended_extension = "png";
+		} elseif($image_type == IMAGETYPE_WEBP) {
+			imagewebp($this->image, $filename, $compression);
+			$recomended_extension = "webp";
 		}
 		$this->image_type = $image_type;
 		$this->filename = $filename;
