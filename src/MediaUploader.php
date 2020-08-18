@@ -226,10 +226,18 @@ class MediaUploader
 	}
 	public function deleteMediaFile($filename) {
 		$dir = $this->options['dir'];
-		$resizes = $this->options['resizes'];
 		$this->delete($dir.$filename);
-		foreach($resizes as $resize => $size) {
-			$this->delete($dir.$resize.$filename);
+		if($this->options['webp_duplicate']) {
+			$this->delete(preg_replace("/\.\w+$/", ".webp", $dir.$filename));
+		}
+		$resizes = $this->options['resizes'];
+		if(is_array($resizes)){			
+			foreach($resizes as $resize => $size) {
+				$this->delete($dir.$resize.$filename);
+				if($this->options['webp_duplicate']) {
+					$this->delete(preg_replace("/\.\w+$/", ".webp", $dir.$resize.$filename));
+				}
+			}
 		}
 	}
 	public function delete($filename) {
