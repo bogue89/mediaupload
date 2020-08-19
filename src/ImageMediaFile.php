@@ -16,7 +16,30 @@ class ImageMediaFile
 			return null;
 		}
 	}
-
+	public static function mime_type($image_type = null) {
+		if($image_type == IMAGETYPE_JPEG) {
+			return "image/jpeg";
+		} elseif($image_type == IMAGETYPE_GIF) {
+			return "image/gif";
+		} elseif($image_type == IMAGETYPE_PNG) {
+			return "image/png";
+		} elseif($image_type == IMAGETYPE_WEBP) {
+			return "image/webp";
+		}
+		return null;
+	}
+	public static function extension($image_type = null) {
+		if($image_type == IMAGETYPE_JPEG) {
+			return "jpg";
+		} elseif($image_type == IMAGETYPE_GIF) {
+			return "gif";
+		} elseif($image_type == IMAGETYPE_PNG) {
+			return "png";
+		} elseif($image_type == IMAGETYPE_WEBP) {
+			return "webp";
+		}
+		return null;
+	}
 	public function __construct($filename, $memory_limit = '256M', $execution_time = 60)
 	{
 		ini_set('memory_limit', $memory_limit);
@@ -85,29 +108,6 @@ class ImageMediaFile
 		} elseif($image_type == IMAGETYPE_WEBP) {
 			imagewebp($this->image);
 		}
-	}
-	public function convert($image_type = IMAGETYPE_JPEG, $compression = 80)
-	{
-		$filename = $this->filename;
-		$recomended_extension = null;
-		
-		if($image_type == IMAGETYPE_JPEG) {
-			imagejpeg($this->image, $filename, $compression);
-			$recomended_extension = "jpg";
-		} elseif($image_type == IMAGETYPE_GIF) {
-			imagegif($this->image, $filename);
-			$recomended_extension = "gif";
-		} elseif($image_type == IMAGETYPE_PNG) {
-			imagepng($this->image, $filename);
-			$recomended_extension = "png";
-		} elseif($image_type == IMAGETYPE_WEBP) {
-			imagewebp($this->image, $filename, $compression);
-			$recomended_extension = "webp";
-		}
-		$this->image_type = $image_type;
-		$this->filename = $filename;
-		
-		return $recomended_extension;
 	}
 	public function setProgresive() {
 		if($this->image) {

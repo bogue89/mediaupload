@@ -127,7 +127,7 @@ class MediaUploader
 		return $filename;
 	}
 	public function afterMediaSave(&$file_info) {
-		if(preg_match('/image\/(png|jpg|jpeg)/i', $file_info['type'])) {
+		if(preg_match('/image\/(png|jpg|jpeg|webp)/i', $file_info['type'])) {
 			
 			if($image = new ImageMediaFile($file_info['dir'].$file_info['filename'])) {
 				// Get exif meta data
@@ -174,12 +174,13 @@ class MediaUploader
 				if($this->options['optimize_original']) {
 					$image->setProgresive();
 					if(isset($this->options['optimize_original']['jpg_if_posible']) && $this->options['optimize_original']['jpg_if_posible']) {
-						if($image->getImageType() == IMAGETYPE_PNG AND !$image->hasAlpha()) {
-							$ext = $image->convert(IMAGETYPE_JPEG);
+						if($image->getImageType() != IMAGETYPE_JPEG AND !$image->hasAlpha()) {
 							$this->delete($file_info['dir'].$file_info['filename']);
-							$file_info['type'] = "image/$ext";
-							$image->filename = preg_replace("/\.\w+$/", ".{$ext}", $image->filename);
+							$file_info['type'] = ImageMediaFile::mime_type(IMAGETYPE_JPEG);
+							$image->filename = preg_replace("/\.\w+$/", ".".ImageMediaFile::extension(IMAGETYPE_JPEG), $image->filename);
 							$file_info['filename'] = basename($image->filename);
+							$image->save($image->filename, IMAGETYPE_JPEG);
+							
 						}
 					}
 					if(isset($this->options['optimize_original']['max_width']) && $image->getWidth() > $this->options['optimize_original']['max_width']) {
@@ -193,11 +194,7 @@ class MediaUploader
 				$file_info['height'] = $image->getHeight();
 				$image->save();
 				if($this->options['webp_duplicate']) {
-					if($ext = $image->convert(IMAGETYPE_WEBP)) {
-						$image->filename = preg_replace("/\.\w+$/", ".{$ext}", $image->filename);
-						$image->save();
-						unset($image);
-					}					
+					$image->save(preg_replace("/\.\w+$/", ".".ImageMediaFile::extension(IMAGETYPE_WEBP), $image->filename), IMAGETYPE_WEBP);
 				}
 				unset($image);
 				// Resize image
@@ -211,12 +208,10 @@ class MediaUploader
 						} else if(isset($resize['height'])) {
 							$image->resizeToHeight($resize['height']);
 						}
-						$image->save($file_info['dir'].$prefix.$file_info['filename']);
+						$prefix_filename = $file_info['dir'].$prefix.$file_info['filename'];
+						$image->save($prefix_filename);
 						if($this->options['webp_duplicate']) {
-							if($ext = $image->convert(IMAGETYPE_WEBP)) {
-								$image->save(preg_replace("/\.\w+$/", ".{$ext}", $file_info['dir'].$prefix.$file_info['filename']));
-								unset($image);
-							}
+							$image->save(preg_replace("/\.\w+$/", ".".ImageMediaFile::extension(IMAGETYPE_WEBP), $prefix_filename), IMAGETYPE_WEBP);
 						}
 						unset($image);
 					}
