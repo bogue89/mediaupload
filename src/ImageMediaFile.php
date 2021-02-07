@@ -5,6 +5,18 @@ class ImageMediaFile
 	private $image_type;
 	public $filename;
 	
+	public static $mime_types = [
+		'jpg' 	=> 'image/jpeg',
+		'jpeg' 	=> 'image/jpeg',
+		'gif' 	=> 'image/gif',
+		'png' 	=> 'image/png',
+		'webp' 	=> 'image/webp',
+		'ico'	=> 'image/x-icon',
+		'tif'	=> 'image/tiff',
+		'tiff'	=> 'image/tiff',
+		'heif'	=> 'image/heif',
+	];
+	
 	public static function load($filename)
 	{
 		try

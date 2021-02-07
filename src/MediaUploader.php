@@ -23,18 +23,10 @@ class MediaUploader
 	public function __construct($options=array()) {
 		require_once 'MediaFile.php';
 		require_once 'ImageMediaFile.php';
-
-		return $this->init($options);
-	}
-	public function init($options=array()) {
+		require_once 'VideoMediaFile.php';
 		$this->options = array_merge($this->options, $options);
-
-		if(isset($this->options['blendWith']['filename'])) {
-			$this->options['blendWith']['filename'] = $this->options['blendWith']['filename'];
-		}
-		return $this->options;
 	}
-	public function save($files){
+	public function save($files) {
 		$file_infos = array();
     
 		if(!is_array($files)) {
@@ -97,10 +89,10 @@ class MediaUploader
 		}
 		return null;
 	}
-	public function saveImageData($data, &$file_info) {
+	public function saveData($data, &$file_info) {
 		$MediaFile = new MediaFile(null);
 		$MediaFile->error = 0;
-		if($MediaFile->saveImageData($data, $file_info['dir'].$file_info['filename'])) {
+		if($MediaFile->save($data, $file_info['dir'].$file_info['filename'])) {
 			$this->afterMediaSave($file_info);
 			return true;
 		}
@@ -127,8 +119,7 @@ class MediaUploader
 		return $filename;
 	}
 	public function afterMediaSave(&$file_info) {
-		if(preg_match('/image\/(png|jpg|jpeg|webp)/i', $file_info['type'])) {
-			
+		if(array_search($file_info['type'], ImageMediaFile::$mime_types)) {
 			if($image = new ImageMediaFile($file_info['dir'].$file_info['filename'])) {
 				// Get exif meta data
 				$file_info['exif'] = $image->getExif();
@@ -140,8 +131,8 @@ class MediaUploader
 					$blendOptions = array_merge(
 						array(
 							'filename' => '',
-							'x' => 'top',
-							'y' => 'left'
+							'x' => 'left',
+							'y' => 'top'
 						),
 						$this->options['blendWith']
 					);
@@ -214,6 +205,79 @@ class MediaUploader
 							$image->save(preg_replace("/\.\w+$/", ".".ImageMediaFile::extension(IMAGETYPE_WEBP), $prefix_filename), IMAGETYPE_WEBP);
 						}
 						unset($image);
+					}
+				}
+			}
+		} else if(array_search($file_info['type'], VideoMediaFile::$mime_types)) {
+			if($video = new VideoMediaFile($file_info['dir'].$file_info['filename'])) {
+				// Get exif meta data
+				$file_info['exif'] = $video->getExif();
+				// Optimize original
+				if($this->options['optimize_original']) {
+					if(isset($this->options['optimize_original']['max_width']) && $video->getWidth() > $this->options['optimize_original']['max_width']) {
+						$video->resizeToWidth($this->options['optimize_original']['max_width']);
+					}
+					if(isset($this->options['optimize_original']['max_height']) && $video->getHeight() > $this->options['optimize_original']['max_height']) {
+						$video->resizeToHeight($this->options['optimize_original']['max_height']);
+					}
+				}
+				$file_info['width'] = $video->getWidth();
+				$file_info['height'] = $video->getHeight();
+				$file_info['duration'] = $video->getDuration();
+				
+				// BlendImage
+				if($this->options['blendWith'] && is_array($this->options['blendWith'])) {
+					$blendOptions = array_merge(
+						array(
+							'filename' => '',
+							'x' => 'left',
+							'y' => 'top',
+							't' => 0,
+							'd' => 0,
+						),
+						$this->options['blendWith']
+					);
+					if($watermark = ImageMediaFile::load($blendOptions['filename'])) {
+						$x = $y = 0;
+						$w = $watermark->getWidth();
+						$h = $watermark->getHeight();
+						if($w > $video->getWidth()) {
+							$w = $video->getWidth();
+							$h = $w * $watermark->getHeight() / $watermark->getWidth();
+						}
+						if($h > $video->getHeight()) {
+							$h = $video->getHeight();
+							$w = $h * $watermark->getWidth() / $watermark->getHeight();
+						}
+						if($blendOptions['x']=="right") {
+							$x = $video->getWidth() - $w;
+						} else if($blendOptions['x']=="center") {
+							$x = $video->getWidth()/2 - $w/2;
+						}
+						if($blendOptions['y']=="bottom") {
+							$y = $video->getHeight() - $h;
+						}
+						$watermark->resize($w, $h);
+						$video->blendWith($watermark, $x, $y, $blendOptions['t'], $blendOptions['d']);
+						unset($watermark);
+					}
+				}
+				$video->save();
+				unset($video);
+				// Resize vide
+				if(isset($this->options['resizes']) && is_array($this->options['resizes'])) {
+					foreach($this->options['resizes'] as $prefix => $resize) {
+						$video = new VideoMediaFile($file_info['dir'].$file_info['filename']);
+						if(isset($resize['width']) && isset($resize['height'])) {
+							$video->resize($resize['width'], $resize['height']);
+						} else if(isset($resize['width'])) {
+							$video->resizeToWidth($resize['width']);
+						} else if(isset($resize['height'])) {
+							$video->resizeToHeight($resize['height']);
+						}
+						$prefix_filename = $file_info['dir'].$prefix.$file_info['filename'];
+						$video->save($prefix_filename);
+						unset($video);
 					}
 				}
 			}

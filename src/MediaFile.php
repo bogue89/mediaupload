@@ -18,9 +18,6 @@ class MediaFile
 		11	 => "File mime-type is not allowed"
 	);
 	public function __construct($filename) {
-		$this->init($filename);
-	}
-	public function init($filename) {
 		$this->filename = $filename;
 		if(!file_exists($this->filename)) {
 			$this->error = 5;
@@ -58,7 +55,7 @@ class MediaFile
 		$this->error = 7;
 		return false;
 	}
-	public function saveImageData($data, $filename, $create_directory=true, $change_permissions=false, $permissions=0755) {	
+	public function save($data, $filename, $create_directory=true, $change_permissions=false, $permissions=0755) {	
 		if($this->error > 0)
 			return false;
 		if(!file_exists(dirname($filename))) {
